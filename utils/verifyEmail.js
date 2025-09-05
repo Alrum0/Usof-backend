@@ -25,3 +25,22 @@ async function sendVerificationEmail(user) {
     html: `<a href="${url}">Натисни, щоб підвердити email</a>`,
   });
 }
+
+async function sendResetPasswordEmail(user) {
+  const resetToken = jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {
+    expiresIn: '15m',
+  });
+
+  const resetLink = `http://localhost:3000/api/auth/password-reset/${resetToken}`;
+
+  console.log('Reset link:', resetLink);
+
+  await transporter.sendMail({
+    from: '"My App" <no-reply@myapp.com>',
+    to: user.email,
+    subject: 'Reset your password',
+    html: `<a href="${resetLink}">Натисни, щоб скинути свій пароль</a>`,
+  });
+}
+
+module.exports = { sendVerificationEmail, sendResetPasswordEmail };

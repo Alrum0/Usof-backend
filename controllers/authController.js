@@ -3,6 +3,10 @@ const User = require('../models/user');
 const Token = require('../models/tokenModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const {
+  sendVerificationEmail,
+  sendResetPasswordEmail,
+} = require('../utils/verifyEmail');
 
 const generateJwt = (id, email, role) => {
   return jwt.sign({ id, email, role }, process.env.SECRET_KEY, {
@@ -28,16 +32,15 @@ class AuthControllers {
         fullName,
         email,
         password: hashPassword,
+        isVerified: false,
       });
-      const token = generateJwt(user.id, user.email, user.role);
+      // const token = generateJwt(user.id, user.email, user.role);
 
-      await Token.create({
-        userId: user.id,
-        token,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      await sendVerificationEmail(user);
+
+      return res.json({
+        message: 'Please check your email to confirm account',
       });
-
-      return res.json({ token });
     } catch (err) {
       console.error(err);
     }
@@ -48,6 +51,12 @@ class AuthControllers {
       const user = await User.findOne({ email });
       if (!user) {
         return next(ApiError.internal('User with this email not found'));
+      }
+
+      if (!user.isVerified) {
+        return next(
+          ApiError.forbidden('Please verify your email before logging in')
+        );
       }
 
       let comparePassword = bcrypt.compareSync(password, user.password);
@@ -68,6 +77,7 @@ class AuthControllers {
       console.error(err);
     }
   }
+  //FIXME: ПОдумати над реалізацією logout
   async logout(req, res, next) {
     try {
       const token = req.headers.authorization.split(' ')[1];
@@ -78,8 +88,83 @@ class AuthControllers {
     }
   }
 
-  async passwordReset(req, res, next) {}
-  async confirmToken(req, res, next) {}
+  async passwordReset(req, res, next) {
+    try {
+      const { email } = req.body;
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        return next(ApiError.internal('User with this email not found'));
+      }
+
+      await sendResetPasswordEmail(user);
+      return res.json({
+        message: 'Please check your email to reset your password',
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  async confirmToken(req, res, next) {
+    try {
+      const { confirm_token } = req.params;
+      const { newPassword } = req.body;
+
+      if (!newPassword) {
+        return next(ApiError.badRequest('New password is required'));
+      }
+
+      let playload;
+      try {
+        playload = jwt.verify(confirm_token, process.env.SECRET_KEY);
+      } catch (err) {
+        return next(ApiError.badRequest('Invalid or expired token'));
+      }
+
+      const user = await User.findById(playload.userId);
+      if (!user) {
+        return next(ApiError.internal('User not found'));
+      }
+
+      // const tokenRecord = await Token.findOne({ token: confirm_token });
+      // if (!tokenRecord) {
+      //   return next(ApiError.badRequest('Token is invalid or already used'));
+      // }
+
+      const hashPassword = await bcrypt.hash(newPassword, 5);
+      await User.update(user.id, { password: hashPassword });
+
+      // await Token.deleteAll({ token: confirmToken });
+
+      return res.json({ message: 'Password has been reset successfully' });
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Something went wrong'));
+    }
+  }
+
+  async verifyEmail(req, res, next) {
+    try {
+      const { token } = req.query;
+      const playload = jwt.verify(token, process.env.SECRET_KEY);
+
+      const user = await User.findById(playload.userId);
+      if (!user) {
+        return next(ApiError.badRequest('Invalid token'));
+      }
+
+      if (user.isVerified) {
+        return res.json({ message: 'Email already verified' });
+      }
+
+      await User.update(user.id, { isVerified: true });
+
+      return res.json({ message: 'Email verified successfully' });
+    } catch (err) {
+      next(ApiError.badRequest('Invalid token or expired token'));
+      console.error(err);
+    }
+  }
 }
 
 module.exports = new AuthControllers();
