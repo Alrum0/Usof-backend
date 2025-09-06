@@ -17,22 +17,33 @@ const generateJwt = (id, email, role) => {
 class AuthControllers {
   async registration(req, res, next) {
     try {
-      const { fullName, email, password, role } = req.body;
+      const { fullName, email, password, role, login, confirmPassword } =
+        req.body;
       if (!email || !password) {
         return next(ApiError.badRequest('Incorrect email or password'));
       }
 
-      const candidate = await User.findOne({ email });
-      if (candidate) {
+      if (password !== confirmPassword) {
+        return next(ApiError.badRequest('Passwords do not match'));
+      }
+
+      const candidateEmail = await User.findOne({ email });
+      if (candidateEmail) {
         return next(ApiError.badRequest('User with this email already exists'));
+      }
+
+      const candidateLogin = await User.findOne({ login });
+      if (candidateLogin) {
+        return next(ApiError.badRequest('User with this login already exists'));
       }
 
       const hashPassword = await bcrypt.hash(password, 5);
       const user = await User.create({
         fullName,
         email,
+        login,
         password: hashPassword,
-        isVerified: false,
+        isVeriffied: false,
       });
       // const token = generateJwt(user.id, user.email, user.role);
 
@@ -53,7 +64,7 @@ class AuthControllers {
         return next(ApiError.internal('User with this email not found'));
       }
 
-      if (!user.isVerified) {
+      if (!user.isVeriffied) {
         return next(
           ApiError.forbidden('Please verify your email before logging in')
         );
@@ -153,11 +164,11 @@ class AuthControllers {
         return next(ApiError.badRequest('Invalid token'));
       }
 
-      if (user.isVerified) {
+      if (user.isVeriffied) {
         return res.json({ message: 'Email already verified' });
       }
 
-      await User.update(user.id, { isVerified: true });
+      await User.update(user.id, { isVeriffied: true });
 
       return res.json({ message: 'Email verified successfully' });
     } catch (err) {

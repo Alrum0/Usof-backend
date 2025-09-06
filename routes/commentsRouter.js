@@ -1,6 +1,6 @@
 const Router = require('express');
 const router = new Router();
-const CommentController = require('../controllers/CommentController');
+const CommentController = require('../controllers/commentController');
 
 router.get('/:comment_id', CommentController.getComment);
 router.get('/:comment_id/like', CommentController.getAllLikesForComment);

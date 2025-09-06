@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 async function sendVerificationEmail(user) {
   const token = jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {
-    expiresIn: '1d',
+    expiresIn: '15m',
   });
 
   const url = `http://localhost:3000/api/auth/verify?token=${token}`;
