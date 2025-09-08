@@ -24,7 +24,33 @@ class CategoriesController {
       console.error(err);
     }
   }
-  async getAllPostsForCategory(req, res, next) {}
+  async getAllPostsForCategory(req, res, next) {
+    try {
+      let { category_id, page, limit } = req.params;
+      page = page | 1;
+      limit = limit | 10;
+      let offset = page * limit - limit;
+
+      const posts = await categoriesModel.findByCategoryPaginated(
+        category_id,
+        limit,
+        offset
+      );
+
+      if (!posts || posts.length === 0) {
+        return next(ApiError.badRequest('No posts found for this category'));
+      }
+
+      return res.json({
+        page,
+        limit,
+        count: posts.length,
+        posts,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
   async createCategory(req, res, next) {
     try {
       const { title, description } = req.body;
