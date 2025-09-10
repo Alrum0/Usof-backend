@@ -1,7 +1,11 @@
 const ApiError = require('../error/ApiError');
+
 const Post = require('../models/postModel');
 const Categories = require('../models/categoriesModel');
 const PostCategories = require('../models/postCategoriesModel');
+const PostImage = require('../models/postImageModel');
+const Comment = require('../models/commentModel');
+
 const uuid = require('uuid');
 const path = require('path');
 const fs = require('fs');
@@ -35,7 +39,7 @@ class PostControllers {
     try {
       const { post_id } = req.params;
 
-      const post = await Post.findById(post_id);
+      const post = await Post.findPostWithImages(post_id);
       if (!post) {
         return next(ApiError.badRequest('Post not found'));
       }
@@ -45,8 +49,39 @@ class PostControllers {
       console.error(err);
     }
   }
-  async getAllCommentsForPost(req, res, next) {}
-  async createCommentForPost(req, res, next) {}
+  async getAllCommentsForPost(req, res, next) {
+    try {
+      const { post_id } = req.params;
+
+      const comments = await Comment.findAll({ postId: post_id });
+      return res.json(comments);
+    } catch (err) {
+      console.error(err);
+      next(ApiError.internal('Failed to fetch comments'));
+    }
+  }
+  async createCommentForPost(req, res, next) {
+    try {
+      const { post_id } = req.params;
+      const { content } = req.body;
+      const authorId = req.user.id;
+
+      if (!content) {
+        next(ApiError.badRequest('Content is required'));
+      }
+
+      await Comment.create({
+        postId: post_id,
+        authorId,
+        content,
+      });
+
+      res.json({ message: 'Comment created successfully' });
+    } catch (err) {
+      console.error(err);
+      next(ApiError.badRequest('Failed to create comment'));
+    }
+  }
   async getAllCategories(req, res, next) {}
   async getAllLikesForPost(req, res, next) {}
   async createPost(req, res, next) {
@@ -54,10 +89,9 @@ class PostControllers {
       const { title, content } = req.body;
       const authorId = req.user.id;
 
-      let categories = req.body.categories;
-      if (!Array.isArray(categories)) {
-        categories = [categories];
-      }
+      let categories = Array.isArray(req.body.categories)
+        ? req.body.categories
+        : [req.body.categories];
 
       if (!title || !content) {
         return next(ApiError.badRequest('Ttile and content are required'));
@@ -66,19 +100,26 @@ class PostControllers {
       if (!req.files || !req.files.image) {
         return next(ApiError.badRequest('No file uploaded'));
       }
-      const { image } = req.files;
 
-      const fileName = uuid.v4() + '.webp';
-      const filepath = path.resolve(__dirname, '..', 'static', fileName);
-
-      await sharp(image.data).webp({ quality: 80 }).toFile(filepath);
+      let images = Array.isArray(req.files.image)
+        ? req.files.image
+        : [req.files.image];
 
       const post = await Post.create({
         title,
         content,
         authorId,
-        image: fileName,
       });
+
+      await Promise.all(
+        images.map(async (img) => {
+          const fileName = uuid.v4() + '.webp';
+          const filePath = path.resolve(__dirname, '..', 'static', fileName);
+
+          await sharp(img.data).webp({ quality: 80 }).toFile(filePath);
+          await PostImage.create({ postId: post.id, fileName });
+        })
+      );
 
       if (!Array.isArray(categories) || categories.length === 0) {
         return next(

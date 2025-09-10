@@ -5,8 +5,21 @@ class BaseModel {
     this.tableName = tableName;
   }
 
-  async findAll() {
-    const [rows] = await db.query(`SELECT * FROM ${this.tableName}`);
+  async findAll(condition) {
+    if (!condition) {
+      const [rows] = await db.query(`SELECT * FROM ${this.tableName}`);
+      return rows;
+    }
+
+    const keys = Object.keys(condition);
+    const values = Object.values(condition);
+    const whereClause = keys.map((key) => `${key} = ?`).join(' AND ');
+
+    const [rows] = await db.query(
+      `SELECT * FROM ${this.tableName} WHERE ${whereClause}`,
+      values
+    );
+
     return rows;
   }
 

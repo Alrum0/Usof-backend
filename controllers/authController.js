@@ -105,7 +105,7 @@ class AuthControllers {
 
       const user = await User.findOne({ email });
       if (!user) {
-        return next(ApiError.internal('User with this email not found'));
+        return next(ApiError.badRequest('User with this email not found'));
       }
 
       await sendResetPasswordEmail(user);
@@ -143,6 +143,16 @@ class AuthControllers {
       // }
 
       const hashPassword = await bcrypt.hash(newPassword, 5);
+
+      const isSame = await bcrypt.compare(newPassword, user.password);
+      if (isSame) {
+        return next(
+          ApiError.badRequest(
+            'New password cannot be the same as the old password'
+          )
+        );
+      }
+
       await User.update(user.id, { password: hashPassword });
 
       // await Token.deleteAll({ token: confirmToken });

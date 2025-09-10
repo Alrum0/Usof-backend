@@ -1,4 +1,6 @@
+DROP TABLE IF EXISTS post_image;
 DROP TABLE IF EXISTS post_categories;
+DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS posts;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS tokens;
@@ -43,10 +45,27 @@ CREATE TABLE IF NOT EXISTS posts
     publishDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
     content TEXT NOT NULL,
-    image VARCHAR(512) DEFAULT NULL,
 
     CONSTRAINT fk_post_author FOREIGN KEY (authorId) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS comments
+(
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    authorId INT NOT NULL,
+    postId INT NOT NULL,
+    publishDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    content TEXT NOT NULL,
+
+    CONSTRAINT fk_comment_post FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_comment_author FOREIGN KEY (authorId) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+-- --------------------------------------
+
+
+
 
 CREATE TABLE IF NOT EXISTS post_categories
 (
@@ -58,3 +77,12 @@ CREATE TABLE IF NOT EXISTS post_categories
     CONSTRAINT fk_post FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
     CONSTRAINT fk_category FOREIGN KEY (categoryId) REFERENCES categories(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS post_image
+(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    postId INT NOT NULL,
+    fileName VARCHAR(512) NOT NULL,
+
+    CONSTRAINT fk_post_img FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE
+)

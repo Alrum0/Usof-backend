@@ -111,7 +111,7 @@ class UserControllers {
   async updateUser(req, res, next) {
     try {
       const { user_id } = req.params;
-      let { fullName, email } = req.body;
+      let { fullName, email, isOfficial } = req.body;
 
       const user = await User.findById(user_id);
       if (!user) {
@@ -122,6 +122,7 @@ class UserControllers {
 
       if (fullName !== undefined) updateData.fullName = fullName;
       if (email !== undefined) updateData.email = email;
+      if (isOfficial !== undefined) updateData.isOfficial = isOfficial;
 
       if (
         Object.keys(updateData).length < 0 ||

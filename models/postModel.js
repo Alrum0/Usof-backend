@@ -8,7 +8,13 @@ class Posts extends BaseModel {
 
   async findAllWithPagination(limit, offset) {
     const [rows] = await db.query(
-      `SELECT * FROM ${this.tableName} LIMIT ? OFFSET ?`,
+      `SELECT p.*,
+            COALESCE(JSON_ARRAYAGG(pi.fileName), JSON_ARRAY()) AS images
+     FROM posts p
+     LEFT JOIN post_image pi ON p.id = pi.postId
+     GROUP BY p.id
+     ORDER BY p.publishDate DESC
+     LIMIT ? OFFSET ?`,
       [limit, offset]
     );
 
@@ -19,6 +25,20 @@ class Posts extends BaseModel {
     const [[{ count }]] = await db.query(
       `SELECT COUNT(*) as count FROM ${this.tableName}`
     );
+  }
+
+  async findPostWithImages(postId) {
+    const [rows] = await db.query(
+      `SELECT p.*,
+            COALESCE(JSON_ARRAYAGG(pi.fileName), JSON_ARRAY()) AS images
+     FROM posts p
+     LEFT JOIN post_image pi ON p.id = pi.postId
+     WHERE p.id = ?
+     GROUP BY p.id`,
+      [postId]
+    );
+
+    return rows[0] || null;
   }
 }
 
