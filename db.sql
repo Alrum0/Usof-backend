@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS post_image;
 DROP TABLE IF EXISTS post_categories;
+DROP TABLE IF EXISTS likes;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS posts;
 DROP TABLE IF EXISTS categories;
@@ -51,7 +52,7 @@ CREATE TABLE IF NOT EXISTS posts
 
 CREATE TABLE IF NOT EXISTS comments
 (
-    ID INT PRIMARY KEY AUTO_INCREMENT,
+    id INT PRIMARY KEY AUTO_INCREMENT,
     authorId INT NOT NULL,
     postId INT NOT NULL,
     publishDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -61,6 +62,17 @@ CREATE TABLE IF NOT EXISTS comments
     CONSTRAINT fk_comment_author FOREIGN KEY (authorId) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS likes
+(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    userId INT NOT NULL,
+    postId INT NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_like_user FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_like_post FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
+    UNIQUE(userId, postId)
+);
 
 -- --------------------------------------
 

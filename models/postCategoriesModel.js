@@ -13,6 +13,21 @@ class PostCategories extends BaseModel {
       [values]
     );
   }
+
+  async deleteByPostId(postId) {
+    await db.query('DELETE FROM post_categories WHERE postId = ?', [postId]);
+  }
+
+  async findCategoriesByPostId(postId) {
+    const [rows] = await db.query(
+      `SELECT c.id, c.title, c.description
+    FROM post_categories pc
+    INNER JOIN categories c ON pc.categoryId = c.id
+    WHERE pc.postId = ? `,
+      [postId]
+    );
+    return rows;
+  }
 }
 
 module.exports = new PostCategories();

@@ -27,6 +27,18 @@ class Posts extends BaseModel {
     );
   }
 
+  async findLikesWithUserInformation(post_id) {
+    const [rows] = await db.query(
+      `SELECT l.userId, u.fullName, u.login, u.avatar
+      FROM likes l
+      JOIN users u ON l.userId = u.id
+      WHERE l.postId = ?
+      ORDER BY l.createdAt DESC`,
+      [post_id]
+    );
+    return rows;
+  }
+
   async findPostWithImages(postId) {
     const [rows] = await db.query(
       `SELECT p.*,

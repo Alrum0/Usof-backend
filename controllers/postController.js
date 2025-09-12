@@ -5,6 +5,7 @@ const Categories = require('../models/categoriesModel');
 const PostCategories = require('../models/postCategoriesModel');
 const PostImage = require('../models/postImageModel');
 const Comment = require('../models/commentModel');
+const Like = require('../models/likeModel');
 
 const uuid = require('uuid');
 const path = require('path');
@@ -82,8 +83,44 @@ class PostControllers {
       next(ApiError.badRequest('Failed to create comment'));
     }
   }
-  async getAllCategories(req, res, next) {}
-  async getAllLikesForPost(req, res, next) {}
+  async getAllCategories(req, res, next) {
+    try {
+      const { post_id } = req.params;
+
+      const post = await Post.findById(post_id);
+      if (!post) {
+        return next(ApiError.badRequest('Post not found'));
+      }
+
+      const categories = await PostCategories.findCategoriesByPostId(post_id);
+      return res.json(categories);
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Failed to fetch categories'));
+    }
+  }
+  async getAllLikesForPost(req, res, next) {
+    try {
+      const { post_id } = req.params;
+
+      const post = await Post.findById(post_id);
+      if (!post) {
+        return next(ApiError.badRequest('Post not found'));
+      }
+
+      const likes = await Post.findLikesWithUserInformation(post_id);
+
+      const result = {
+        count: likes.length,
+        users: likes,
+      };
+
+      return res.json(result);
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Failed to fetch likes'));
+    }
+  }
   async createPost(req, res, next) {
     try {
       const { title, content } = req.body;
@@ -142,8 +179,99 @@ class PostControllers {
       console.error(err);
     }
   }
-  async createLike(req, res, next) {}
-  async updatePost(req, res, next) {}
+  async createLike(req, res, next) {
+    try {
+      const { post_id } = req.params;
+      const userId = req.user.id;
+
+      const post = await Post.findById(post_id);
+      if (!post) {
+        return next(ApiError.badRequest('Posts not found'));
+      }
+
+      const existing = await Like.findOne({ userId, postId: post_id });
+      if (existing) {
+        return next(ApiError.badRequest('You already liked this post'));
+      }
+
+      await Like.create({ userId, postId: post_id });
+      return res.json({ message: 'Like added successfully' });
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Failed to add like'));
+    }
+  }
+  async updatePost(req, res, next) {
+    try {
+      const { post_id } = req.params;
+      let { title, content } = req.body;
+
+      const post = await Post.findById(post_id);
+      if (!post) {
+        return next(ApiError.badRequest('Post not found'));
+      }
+
+      const updateData = {};
+      if (title !== undefined) updateData.title = title;
+      if (content !== undefined) updateData.content = content;
+
+      if (Object.keys(updateData).length > 0) {
+        await Post.update(post_id, updateData);
+      }
+
+      let categories = Array.isArray(req.body.categories)
+        ? req.body.categories
+        : [req.body.categories];
+
+      if (categories) {
+        const validCategories = await Categories.checkCategories(categories);
+        if (validCategories.length !== categories.length) {
+          return next(
+            ApiError.badRequest('One or more categories do not exist')
+          );
+        }
+
+        await PostCategories.deleteByPostId(post_id);
+        await PostCategories.addCategories(post_id, categories);
+      }
+
+      if (req.files && req.files.image) {
+        let images = Array.isArray(req.files.image)
+          ? req.files.image
+          : [req.files.image];
+
+        const oldImages = await PostImage.findAll({ postId: post_id });
+        await Promise.all(
+          oldImages.map(async (img) => {
+            const filePath = path.resolve(
+              __dirname,
+              '..',
+              'static',
+              img.fileName
+            );
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+          })
+        );
+
+        await PostImage.delete(post_id);
+
+        await Promise.all(
+          images.map(async (img) => {
+            const fileName = uuid.v4() + '.webp';
+            const filePath = path.resolve(__dirname, '..', 'static', fileName);
+
+            await sharp(img.data).webp({ quality: 80 }).toFile(filePath);
+            await PostImage.create({ postId: post_id, fileName });
+          })
+        );
+      }
+
+      return res.json({ message: 'Post updated successfully' });
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Failed to update post'));
+    }
+  }
   async deletePost(req, res, next) {
     try {
       const { post_id } = req.params;
@@ -164,10 +292,28 @@ class PostControllers {
       return res.json('Post deleted successfully');
     } catch (err) {
       console.error(err);
-      next(ApiError.internal('Failed to delete post'));
+      return next(ApiError.internal('Failed to delete post'));
     }
   }
-  async deleteLike(req, res, next) {}
+  async deleteLike(req, res, next) {
+    try {
+      const { post_id } = req.params;
+      const userId = req.user.id;
+
+      const like = await Like.findOne({ userId, postId: post_id });
+      if (!like) {
+        return next(
+          ApiError.badRequest('Like not found for this post by this user')
+        );
+      }
+
+      await Like.delete(like.id);
+      return res.json({ message: 'Like removed successfully' });
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.badRequest('Failed to remove like'));
+    }
+  }
 }
 
 module.exports = new PostControllers();
