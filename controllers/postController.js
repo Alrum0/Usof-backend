@@ -67,6 +67,15 @@ class PostControllers {
       const { content } = req.body;
       const authorId = req.user.id;
 
+      const post = await Post.findById(post_id);
+      if (!post) {
+        return next(ApiError.badRequest('Post not found'));
+      }
+
+      if (post.status === 'INACTIVE') {
+        return next(ApiError.badRequest('Cannot comment on inactive post'));
+      }
+
       if (!content) {
         next(ApiError.badRequest('Content is required'));
       }
@@ -204,7 +213,7 @@ class PostControllers {
   async updatePost(req, res, next) {
     try {
       const { post_id } = req.params;
-      let { title, content } = req.body;
+      let { title, content, status } = req.body;
 
       const post = await Post.findById(post_id);
       if (!post) {
@@ -214,6 +223,11 @@ class PostControllers {
       const updateData = {};
       if (title !== undefined) updateData.title = title;
       if (content !== undefined) updateData.content = content;
+      if (status !== undefined) updateData.status = status;
+
+      if (status !== 'ACTIVE' && status !== 'INACTIVE') {
+        return next(ApiError.badRequest('Invalid role (ACTIVE or INACTIVE)'));
+      }
 
       if (Object.keys(updateData).length > 0) {
         await Post.update(post_id, updateData);
@@ -241,29 +255,43 @@ class PostControllers {
           : [req.files.image];
 
         const oldImages = await PostImage.findAll({ postId: post_id });
-        await Promise.all(
-          oldImages.map(async (img) => {
-            const filePath = path.resolve(
-              __dirname,
-              '..',
-              'static',
-              img.fileName
-            );
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-          })
-        );
 
-        await PostImage.delete(post_id);
+        try {
+          await Promise.all(
+            images.map(async (img) => {
+              const fileName = uuid.v4() + '.webp';
+              const filePath = path.resolve(
+                __dirname,
+                '..',
+                'static',
+                fileName
+              );
 
-        await Promise.all(
-          images.map(async (img) => {
-            const fileName = uuid.v4() + '.webp';
-            const filePath = path.resolve(__dirname, '..', 'static', fileName);
+              await sharp(img.data).webp({ quality: 80 }).toFile(filePath);
+              await PostImage.create({ postId: post_id, fileName });
+            })
+          );
 
-            await sharp(img.data).webp({ quality: 80 }).toFile(filePath);
-            await PostImage.create({ postId: post_id, fileName });
-          })
-        );
+          await Promise.all(
+            oldImages.map(async (img) => {
+              const filePath = path.resolve(
+                __dirname,
+                '..',
+                'static',
+                img.fileName
+              );
+              try {
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+                await PostImage.delete(img.id);
+              } catch (err) {
+                console.error(`Failed to delete image ${img.fileName}:`, err);
+              }
+            })
+          );
+        } catch (err) {
+          console.error('Failed to save new images', err);
+          return next(ApiError.internal('Failed to update post images'));
+        }
       }
 
       return res.json({ message: 'Post updated successfully' });

@@ -5,8 +5,8 @@ const CategoriesController = require('../controllers/categoriesController');
 router.get('/', CategoriesController.getAllCategories);
 router.get('/:category_id', CategoriesController.getCategory);
 router.get('/:category_id/posts', CategoriesController.getAllPostsForCategory);
-router.post('/', CategoriesController.createCategory);
-router.patch('/:category_id', CategoriesController.updateCategory);
-router.delete('/:category_id', CategoriesController.deleteCategory);
+router.post('/', CategoriesController.createCategory); // admin
+router.patch('/:category_id', CategoriesController.updateCategory); // admin
+router.delete('/:category_id', CategoriesController.deleteCategory); // admin
 
 module.exports = router;

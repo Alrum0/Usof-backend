@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS post_image;
 DROP TABLE IF EXISTS post_categories;
 DROP TABLE IF EXISTS likes;
+DROP TABLE IF EXISTS comment_likes;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS posts;
 DROP TABLE IF EXISTS categories;
@@ -72,6 +73,18 @@ CREATE TABLE IF NOT EXISTS likes
     CONSTRAINT fk_like_user FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_like_post FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
     UNIQUE(userId, postId)
+);
+
+CREATE TABLE IF NOT EXISTS comment_likes
+(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    userId INT NOT NULL,
+    commentId INT NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_comment_like_user FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_comment_like_comment FOREIGN KEY (commentId) REFERENCES comments(id) ON DELETE CASCADE,
+    UNIQUE(userId, commentId)
 );
 
 -- --------------------------------------
