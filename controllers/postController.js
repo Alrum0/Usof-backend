@@ -40,7 +40,7 @@ class PostControllers {
     try {
       const { post_id } = req.params;
 
-      const post = await Post.findPostWithImages(post_id);
+      const post = await Post.findPostWithImagesAndStars(post_id);
       if (!post) {
         return next(ApiError.badRequest('Post not found'));
       }

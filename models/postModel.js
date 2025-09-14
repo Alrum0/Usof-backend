@@ -39,12 +39,29 @@ class Posts extends BaseModel {
     return rows;
   }
 
-  async findPostWithImages(postId) {
+  // async findPostWithImages(postId) {
+  //   const [rows] = await db.query(
+  //     `SELECT p.*,
+  //           COALESCE(JSON_ARRAYAGG(pi.fileName), JSON_ARRAY()) AS images
+  //    FROM posts p
+  //    LEFT JOIN post_image pi ON p.id = pi.postId
+  //    WHERE p.id = ?
+  //    GROUP BY p.id`,
+  //     [postId]
+  //   );
+
+  //   return rows[0] || null;
+  // }
+
+  async findPostWithImagesAndStars(postId) {
     const [rows] = await db.query(
-      `SELECT p.*,
-            COALESCE(JSON_ARRAYAGG(pi.fileName), JSON_ARRAY()) AS images
+      `SELECT 
+        p.*,
+        COALESCE(JSON_ARRAYAGG(pi.fileName), JSON_ARRAY()) AS images,
+        COALESCE(SUM(ps.stars), 0) AS stars
      FROM posts p
      LEFT JOIN post_image pi ON p.id = pi.postId
+     LEFT JOIN post_stars ps ON p.id = ps.postId
      WHERE p.id = ?
      GROUP BY p.id`,
       [postId]

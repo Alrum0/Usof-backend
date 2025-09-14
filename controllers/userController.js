@@ -90,7 +90,6 @@ class UserControllers {
 
       const { img } = req.files;
 
-      // const fileName = uuid.v4() + '.jpg';
       const fileName = uuid.v4() + '.webp';
       const filepath = path.resolve(__dirname, '..', 'static', fileName);
 
@@ -172,6 +171,38 @@ class UserControllers {
     } catch (err) {
       console.error(err);
       next(ApiError.internal('Error deleting user'));
+    }
+  }
+  // ---- ---- --- --- -
+  async getUserStars(req, res, next) {
+    try {
+      const { user_id } = req.params;
+      const user = await User.findById(user_id);
+      if (!user) {
+        return next(ApiError.badRequest('User not found'));
+      }
+
+      return res.json({ stars_balance: user.stars_balance });
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Error fetching user stars'));
+    }
+  }
+  async addStars(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const { stars } = req.body;
+
+      if (!stars || stars <= 0) {
+        return next(ApiError.badRequest('Stars must be more than 0'));
+      }
+
+      await User.updateStarsBalance(userId, stars);
+
+      return res.json({ message: 'Stars added successfully' });
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Failed to add stars to your account'));
     }
   }
 }

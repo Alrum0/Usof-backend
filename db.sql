@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS post_stars;
 DROP TABLE IF EXISTS post_image;
 DROP TABLE IF EXISTS post_categories;
 DROP TABLE IF EXISTS likes;
@@ -19,7 +20,8 @@ CREATE TABLE IF NOT EXISTS users
     role ENUM('USER', 'ADMIN') DEFAULT 'USER',
     avatar VARCHAR(512) DEFAULT NULL,
     rating INT DEFAULT 0,
-    isOfficial BOOLEAN DEFAULT FALSE
+    isOfficial BOOLEAN DEFAULT FALSE,
+    stars_balance INT DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS tokens
@@ -87,6 +89,17 @@ CREATE TABLE IF NOT EXISTS comment_likes
     UNIQUE(userId, commentId)
 );
 
+
+CREATE TABLE IF NOT EXISTS post_stars
+(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    userId INT NOT NULL,
+    postId INT NOT NULL,
+    stars INT NOT NULL CHECK (stars > 0),
+    
+    CONSTRAINT fk_stars_post FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_stars_user FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+);
 -- --------------------------------------
 
 

@@ -9,5 +9,8 @@ router.post('/', userController.createUser); // authMiddleware,
 router.patch('/avatar', authMiddleware, userController.uploadAvatar);
 router.patch('/:user_id', userController.updateUser); //authMiddleware,
 router.delete('/:user_id', userController.deleteUser); //authMiddleware,
+// ---- ------ ------ ----
+router.get('/:user_id/stars', userController.getUserStars);
+router.post('/stars', authMiddleware, userController.addStars);
 
 module.exports = router;
