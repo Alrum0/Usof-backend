@@ -62,7 +62,7 @@ class BaseModel {
     return true;
   }
 
-  async deleteAll() {
+  async deleteAll(data) {
     const keys = Object.keys(data);
     const values = Object.values(data);
     const whereClause = keys.map((key) => `${key} = ? `).join(' AND ');

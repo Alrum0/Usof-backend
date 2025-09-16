@@ -7,6 +7,10 @@ const {
   sendVerificationEmail,
   sendResetPasswordEmail,
 } = require('../utils/verifyEmail');
+const {
+  generateAccessToken,
+  generateRefreshToken,
+} = require('../utils/tokenFunction');
 
 const generateJwt = (id, email, role) => {
   return jwt.sign({ id, email, role }, process.env.SECRET_KEY, {
@@ -45,8 +49,6 @@ class AuthControllers {
         password: hashPassword,
         isVeriffied: false,
       });
-      // const token = generateJwt(user.id, user.email, user.role);
-
       await sendVerificationEmail(user);
 
       return res.json({
@@ -75,27 +77,94 @@ class AuthControllers {
         return next(ApiError.internal('Incorrect password'));
       }
 
-      const jwtToken = generateJwt(user.id, user.email, user.role);
+      // const jwtToken = generateJwt(user.id, user.email, user.role);
+
+      const accessToken = generateAccessToken(user.id, user.email, user.role);
+      const refreshToken = generateRefreshToken(user.id);
 
       await Token.create({
         userId: user.id,
-        token: jwtToken,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        token: refreshToken,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       });
 
-      return res.json({ jwtToken });
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.json({ accessToken });
     } catch (err) {
       console.error(err);
     }
   }
-  //FIXME: ПОдумати над реалізацією logout
+
+  async refresh(req, res, next) {
+    try {
+      const { refreshToken } = req.cookies;
+      if (!refreshToken) {
+        return next(ApiError.badRequest('Refresh token not provided'));
+      }
+
+      let payload;
+      try {
+        payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
+      } catch (err) {
+        return next(ApiError.badRequest('Invalid or expired refresh token'));
+      }
+
+      const tokenInDb = await Token.findOne({ token: refreshToken });
+      if (!tokenInDb) {
+        return next(ApiError.badRequest('Refresh token not found'));
+      }
+
+      const user = await User.findById(payload.id);
+      if (!user) {
+        return next(ApiError.badRequest('User not found'));
+      }
+
+      await Token.deleteAll({ token: refreshToken });
+
+      const newAccessToken = generateAccessToken(
+        user.id,
+        user.email,
+        user.role
+      );
+      const newRefreshToken = generateRefreshToken(user.id);
+
+      await Token.create({
+        userId: user.id,
+        token: newRefreshToken,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
+
+      res.cookie('refreshToken', newRefreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.json({ accessToken: newAccessToken });
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Something went wrong'));
+    }
+  }
+
   async logout(req, res, next) {
     try {
-      const token = req.headers.authorization.split(' ')[1];
-      if (token) await Token.deleteAll({ token });
+      const { refreshToken } = req.cookies;
+      if (refreshToken) {
+        await Token.deleteAll({ token: refreshToken });
+      }
+      res.clearCookie('refreshToken');
       return res.json({ message: 'Logged out successfully' });
     } catch (err) {
       console.error(err);
+      return next(ApiError.internal('Logout failed'));
     }
   }
 
@@ -136,12 +205,6 @@ class AuthControllers {
       if (!user) {
         return next(ApiError.internal('User not found'));
       }
-
-      // const tokenRecord = await Token.findOne({ token: confirm_token });
-      // if (!tokenRecord) {
-      //   return next(ApiError.badRequest('Token is invalid or already used'));
-      // }
-
       const hashPassword = await bcrypt.hash(newPassword, 5);
 
       const isSame = await bcrypt.compare(newPassword, user.password);
@@ -154,8 +217,6 @@ class AuthControllers {
       }
 
       await User.update(user.id, { password: hashPassword });
-
-      // await Token.deleteAll({ token: confirmToken });
 
       return res.json({ message: 'Password has been reset successfully' });
     } catch (err) {

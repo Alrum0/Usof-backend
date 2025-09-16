@@ -17,6 +17,13 @@ class StarController {
       await User.updateStarsBalance(userId, -stars);
       await PostStars.create({ postId: post_id, userId, stars });
 
+      const post = await Post.findById(post_id);
+      if (!post) {
+        return next(ApiError.badRequest('Post not found'));
+      }
+
+      await User.updateStarsBalance(post.authorId, stars);
+
       return res.json({ message: 'Stars given successfully' });
     } catch (err) {
       console.error(err);

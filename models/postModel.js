@@ -6,12 +6,30 @@ class Posts extends BaseModel {
     super('posts');
   }
 
+  // async findAllWithPagination(limit, offset) {
+  //   const [rows] = await db.query(
+  //     `SELECT p.*,
+  //           COALESCE(JSON_ARRAYAGG(pi.fileName), JSON_ARRAY()) AS images
+  //    FROM posts p
+  //    LEFT JOIN post_image pi ON p.id = pi.postId
+  //    GROUP BY p.id
+  //    ORDER BY p.publishDate DESC
+  //    LIMIT ? OFFSET ?`,
+  //     [limit, offset]
+  //   );
+
+  //   return rows;
+  // }
+
   async findAllWithPagination(limit, offset) {
     const [rows] = await db.query(
-      `SELECT p.*,
-            COALESCE(JSON_ARRAYAGG(pi.fileName), JSON_ARRAY()) AS images
+      `SELECT 
+        p.*,
+        COALESCE(JSON_ARRAYAGG(pi.fileName), JSON_ARRAY()) AS images,
+        COALESCE(SUM(ps.amount), 0) AS stars
      FROM posts p
      LEFT JOIN post_image pi ON p.id = pi.postId
+     LEFT JOIN post_stars ps ON p.id = ps.postId
      GROUP BY p.id
      ORDER BY p.publishDate DESC
      LIMIT ? OFFSET ?`,

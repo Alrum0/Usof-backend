@@ -5,6 +5,8 @@ const router = require('./routes/index');
 const errorHandler = require('./middleware/ErrorHandlingMiddleware');
 const path = require('path');
 const fileUpload = require('express-fileupload');
+const { globalLimiter } = require('./middleware/rateLimit');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 
@@ -12,6 +14,8 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(globalLimiter);
+app.use(cookieParser());
 
 app.use(fileUpload({}));
 app.use(express.static(path.resolve(__dirname, 'static')));
