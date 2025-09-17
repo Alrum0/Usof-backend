@@ -1,10 +1,12 @@
 const ApiError = require('../error/ApiError');
 const bcrypt = require('bcrypt');
-const User = require('../models/user');
 const uuid = require('uuid');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
+
+const User = require('../models/user');
+const Subscription = require('../models/subscriptionModel');
 
 class UserControllers {
   async getUser(req, res, next) {
@@ -204,6 +206,98 @@ class UserControllers {
     } catch (err) {
       console.error(err);
       return next(ApiError.internal('Failed to add stars to your account'));
+    }
+  }
+
+  async followUser(req, res, next) {
+    try {
+      const followerId = req.user.id;
+      const { user_id: followingId } = req.params;
+
+      if (followerId === parseInt(followingId)) {
+        return next(ApiError.badRequest('You cannot follow yourself'));
+      }
+
+      const alreadyFollowing = await Subscription.findOne({
+        followerId,
+        followingId,
+      });
+
+      if (alreadyFollowing) {
+        return next(ApiError.badRequest('You are already following this user'));
+      }
+
+      await Subscription.create({ followerId, followingId });
+      return res.json({ message: 'Successfully followed the user' });
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Error following user'));
+    }
+  }
+
+  async unfollowUser(req, res, next) {
+    try {
+      const followerId = req.user.id;
+      const { user_id: followingId } = req.params;
+
+      const subscription = await Subscription.findOne({
+        followerId,
+        followingId,
+      });
+
+      if (!subscription) {
+        return next(ApiError.badRequest('You are not following this user'));
+      }
+
+      await Subscription.deleteAll({ followerId, followingId });
+      return res.json({ message: 'Successfully unfollowed the user' });
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Error unfollowing user'));
+    }
+  }
+
+  async getFollowers(req, res, next) {
+    try {
+      const { user_id } = req.params;
+
+      const followers = await Subscription.getFollowers(user_id);
+      return res.json(followers);
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Error fetching followers'));
+    }
+  }
+
+  async getFollowing(req, res, next) {
+    try {
+      const { user_id } = req.params;
+
+      const following = await Subscription.getFollowing(user_id);
+      return res.json(following);
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Error fetching following users'));
+    }
+  }
+
+  async getUserRating(req, res, next) {
+    try {
+      const { user_id } = req.params;
+
+      const user = await User.findById(user_id);
+      if (!user) {
+        return next(ApiError.badRequest('User not found'));
+      }
+
+      const rating = await User.getUserRating(user_id);
+
+      await User.update(user_id, { rating });
+
+      return res.json({ user_id, rating });
+    } catch (err) {
+      console.error(err);
+      return next(ApiError.internal('Error fetching user rating'));
     }
   }
 }

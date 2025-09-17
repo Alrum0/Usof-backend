@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS posts;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS tokens;
+DROP TABLE IF EXISTS subscriptions;
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE IF NOT EXISTS users 
@@ -99,6 +100,19 @@ CREATE TABLE IF NOT EXISTS post_stars
     
     CONSTRAINT fk_stars_post FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
     CONSTRAINT fk_stars_user FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE IF NOT EXISTS subscriptions
+(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    followerId INT NOT NULL,
+    followingId INT NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_subscription_follower FOREIGN KEY (followerId) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_subscription_following FOREIGN KEY (followingId) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(followerId, followingId)
 );
 -- --------------------------------------
 

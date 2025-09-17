@@ -1,9 +1,21 @@
 const ApiError = require('../error/ApiError');
 const BaseModel = require('./baseModel');
+const db = require('../db');
 
 class User extends BaseModel {
   constructor() {
     super('users');
+  }
+
+  async getUserRating(userId) {
+    const [rows] = await db.query(
+      `SELECT COUNT(l.id) AS rating
+       FROM posts p
+       LEFT JOIN likes l ON p.id = l.postId
+       WHERE p.authorId = ?`,
+      [userId]
+    );
+    return rows[0].rating || 0;
   }
 
   async updateStarsBalance(userId, delta) {
