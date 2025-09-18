@@ -30,8 +30,6 @@ class StarController {
       return next(ApiError.internal('Error giving stars'));
     }
   }
-  //FIXME: на подумати
-  async getAllStarsForPost(req, res, next) {}
 }
 
 module.exports = new StarController();

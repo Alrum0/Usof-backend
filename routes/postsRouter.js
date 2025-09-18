@@ -4,6 +4,7 @@ const PostController = require('../controllers/postController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 router.get('/', PostController.getAllPosts);
+router.get('/following', authMiddleware, PostController.findFollowingPosts)
 router.get('/:post_id', PostController.getPost);
 router.get('/:post_id/comments', PostController.getAllCommentsForPost);
 router.post('/:post_id/comments', authMiddleware, PostController.createCommentForPost);

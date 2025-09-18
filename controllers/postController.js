@@ -15,13 +15,18 @@ const sharp = require('sharp');
 class PostControllers {
   async getAllPosts(req, res, next) {
     try {
-      let { limit, page } = req.query;
+      let { limit, page, sort = 'date_desc' } = req.query;
 
-      page = page || 1;
-      limit = limit || 10;
+      page = parseInt(page) || 1;
+      limit = parseInt(limit) || 10;
       let offset = page * limit - limit;
 
-      const posts = await Post.findAllWithPagination(limit, offset);
+      // const posts = await Post.findAllWithPagination(limit, offset);
+      const posts = await Post.findAllWithPaginationAndSorting(
+        limit,
+        offset,
+        sort
+      );
       const total = await Post.countAll();
 
       return res.json({
@@ -340,6 +345,20 @@ class PostControllers {
     } catch (err) {
       console.error(err);
       return next(ApiError.badRequest('Failed to remove like'));
+    }
+  }
+
+  async findFollowingPosts(req, res, next) {
+    try {
+      const userId = req.user.id;
+
+      const posts = await Post.findFollowingPosts(userId);
+      return res.json(posts);
+    } catch (err) {
+      console.error(err);
+      return next(
+        ApiError.internal('Failed to fetch posts from followed users')
+      );
     }
   }
 }
