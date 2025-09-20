@@ -225,6 +225,12 @@ class PostControllers {
         return next(ApiError.badRequest('Post not found'));
       }
 
+      if (post.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+        return next(
+          ApiError.forbidden('You do not have permission to edit this post')
+        );
+      }
+
       const updateData = {};
       if (title !== undefined) updateData.title = title;
       if (content !== undefined) updateData.content = content;
@@ -312,6 +318,12 @@ class PostControllers {
       const post = await Post.findById(post_id);
       if (!post) {
         return next(ApiError.badRequest('Post not found'));
+      }
+
+      if (post.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+        return next(
+          ApiError.forbidden('You do not have permission to delete this post')
+        );
       }
 
       if (post.image) {

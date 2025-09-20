@@ -3,17 +3,17 @@ const router = new Router();
 const PostController = require('../controllers/postController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-router.get('/', PostController.getAllPosts);
-router.get('/following', authMiddleware, PostController.findFollowingPosts)
-router.get('/:post_id', PostController.getPost);
-router.get('/:post_id/comments', PostController.getAllCommentsForPost);
-router.post('/:post_id/comments', authMiddleware, PostController.createCommentForPost);
-router.get('/:post_id/categories',PostController.getAllCategories);
-router.get('/:post_id/like', PostController.getAllLikesForPost);
-router.post('/', authMiddleware, PostController.createPost);
-router.post('/:post_id/like', authMiddleware, PostController.createLike);
-router.patch('/:post_id', PostController.updatePost);
-router.delete('/:post_id',  PostController.deletePost);
-router.delete('/:post_id/like', authMiddleware, PostController.deleteLike);
+router.get('/', PostController.getAllPosts); // OK
+router.get('/following', authMiddleware, PostController.findFollowingPosts) // OK
+router.get('/:post_id', PostController.getPost); // OK
+router.get('/:post_id/comments', PostController.getAllCommentsForPost); // OK
+router.post('/:post_id/comments', authMiddleware, PostController.createCommentForPost); // OK
+router.get('/:post_id/categories',PostController.getAllCategories); // OK
+router.get('/:post_id/like', PostController.getAllLikesForPost); // OK
+router.post('/', authMiddleware, PostController.createPost); // OK
+router.post('/:post_id/like', authMiddleware, PostController.createLike); // OK
+router.patch('/:post_id', authMiddleware, PostController.updatePost); // OK
+router.delete('/:post_id', authMiddleware, PostController.deletePost); // OK
+router.delete('/:post_id/like', authMiddleware, PostController.deleteLike); // OK
 
 module.exports = router;

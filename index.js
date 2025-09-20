@@ -7,6 +7,7 @@ const path = require('path');
 const fileUpload = require('express-fileupload');
 const { globalLimiter } = require('./middleware/rateLimit');
 const cookieParser = require('cookie-parser');
+const cors = require('cors');
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(globalLimiter);
 app.use(cookieParser());
+app.use(cors());
 
 app.use(fileUpload({}));
 app.use(express.static(path.resolve(__dirname, 'static')));

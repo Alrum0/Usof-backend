@@ -3,21 +3,21 @@ const router = new Router();
 const userController = require('../controllers/userController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-router.get('/', userController.getAllUsers);
+router.get('/', authMiddleware, userController.getAllUsers); // admin OK 
 router.get('/:user_id', userController.getUser);
-router.post('/', userController.createUser); // authMiddleware,
-router.patch('/avatar', authMiddleware, userController.uploadAvatar);
-router.patch('/:user_id', userController.updateUser); //authMiddleware,
-router.delete('/:user_id', userController.deleteUser); //authMiddleware,
+router.post('/', authMiddleware, userController.createUser); // admin OK
+router.patch('/avatar', authMiddleware, userController.uploadAvatar); // OK
+router.patch('/:user_id', authMiddleware, userController.updateUser); // admin OK
+router.delete('/:user_id', authMiddleware, userController.deleteUser); // admin OK
 // ---- ------ ------ ----
-router.get('/:user_id/stars', userController.getUserStars);
-router.post('/stars', authMiddleware, userController.addStars);
+router.get('/:user_id/stars', authMiddleware, userController.getUserStars); // OK
+router.post('/stars', authMiddleware, userController.addStars); // OK
 // ---- ------ ------ ----
-router.post('/:user_id/follow', authMiddleware, userController.followUser);
-router.delete('/:user_id/unfollow', authMiddleware, userController.unfollowUser);
-router.get('/:user_id/followers', userController.getFollowers);
-router.get('/:user_id/following', userController.getFollowing);
+router.post('/:user_id/follow', authMiddleware, userController.followUser); // OK
+router.delete('/:user_id/unfollow', authMiddleware, userController.unfollowUser); // OK
+router.get('/:user_id/followers', userController.getFollowers); // OK
+router.get('/:user_id/following', userController.getFollowing); // OK
 // ---- ------ ------ ----
-router.get('/:user_id/rating', userController.getUserRating);
+router.get('/:user_id/rating', userController.getUserRating); // OK
 
 module.exports = router;

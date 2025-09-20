@@ -17,24 +17,29 @@ class UserControllers {
       if (!user) {
         return next(ApiError.badRequest('User not found'));
       }
-      //TODO: подумати над тим, що робити з куристами, які не верифіковані
-      if (!user.isVeriffied) {
-        const publicData = {
-          id: user.id,
-          fullName: user.fullName,
-          isVeriffied: user.isVeriffied,
-          rating: user.rating,
-        };
-        return res.json(publicData);
-      }
-
-      return res.json(user);
+      const publicData = {
+        id: user.id,
+        login: user.login,
+        avatar: user.avatar,
+        fullName: user.fullName,
+        isVeriffied: user.isVeriffied,
+        rating: user.rating,
+      };
+      return res.json(publicData);
     } catch (err) {
       console.error(err);
     }
   }
   async getAllUsers(req, res, next) {
     try {
+      if (req.user.role !== 'ADMIN') {
+        return next(
+          ApiError.forbidden(
+            'You do not have permission to access this resource'
+          )
+        );
+      }
+
       const users = await User.findAll();
       return res.json(users);
     } catch (err) {
@@ -45,6 +50,15 @@ class UserControllers {
     try {
       const { login, fullName, email, password, confirmPassword, role } =
         req.body;
+
+      if (req.user.role !== 'ADMIN') {
+        return next(
+          ApiError.forbidden(
+            'You do not have permission to access this resource'
+          )
+        );
+      }
+
       if (!login || !fullName || !email || !password || !confirmPassword) {
         return next(ApiError.badRequest('All fields are required'));
       }
@@ -86,6 +100,14 @@ class UserControllers {
     try {
       const userId = req.user.id;
 
+      if (req.user.role !== 'ADMIN' && req.user.id !== userId) {
+        return next(
+          ApiError.forbidden(
+            'You do not have permission to access this resource'
+          )
+        );
+      }
+
       if (!req.files || !req.files.img) {
         return next(ApiError.badRequest('No file uploaded'));
       }
@@ -119,31 +141,55 @@ class UserControllers {
         return next(ApiError.badRequest('User not found'));
       }
 
+      const isAdmin = req.user.role === 'ADMIN';
+      const isSelf = req.user.id === user.id;
+
+      if (!isAdmin && !isSelf) {
+        return next(
+          ApiError.forbidden(
+            'You do not have permission to access this resource'
+          )
+        );
+      }
+
       let updateData = {};
 
-      if (fullName !== undefined) updateData.fullName = fullName;
-      if (email !== undefined) updateData.email = email;
-      if (isOfficial !== undefined) updateData.isOfficial = isOfficial;
-      if (stars !== undefined) updateData.stars = stars;
+      if (isAdmin || isSelf) {
+        if (fullName !== undefined) {
+          if (fullName.trim() === '') {
+            return next(
+              ApiError.badRequest('Field "fullName" cannot be empty')
+            );
+          }
+          updateData.fullName = fullName;
+        }
+
+        if (email !== undefined) {
+          if (email.trim() === '') {
+            return next(ApiError.badRequest('Field "email" cannot be empty'));
+          }
+
+          const candidateEmail = await User.findOne({ email });
+          if (candidateEmail) {
+            return next(
+              ApiError.badRequest('User with this email already exists')
+            );
+          }
+
+          updateData.email = email;
+        }
+      }
+
+      if (isAdmin) {
+        if (isOfficial !== undefined) updateData.isOfficial = isOfficial;
+        if (stars !== undefined) updateData.stars = stars;
+      }
 
       if (
         Object.keys(updateData).length < 0 ||
         Object.keys(updateData).length === 0
       ) {
         return next(ApiError.badRequest('No fields to update'));
-      }
-
-      if (fullName !== undefined && fullName.trim() === '') {
-        return next(ApiError.badRequest('Field "fullName" cannot be empty'));
-      }
-
-      if (email !== undefined && email.trim() === '') {
-        return next(ApiError.badRequest('Field "email" cannot be empty'));
-      }
-
-      const candidateEmail = await User.findOne({ email });
-      if (candidateEmail) {
-        return next(ApiError.badRequest('User with this email already exists'));
       }
 
       await User.update(user_id, updateData);
@@ -160,6 +206,14 @@ class UserControllers {
       const user = await User.findById(user_id);
       if (!user) {
         return next(ApiError.badRequest('User not found'));
+      }
+
+      if (req.user.role !== 'ADMIN' && req.user.id !== user.id) {
+        return next(
+          ApiError.forbidden(
+            'You do not have permission to access this resource'
+          )
+        );
       }
 
       if (user.avatar) {
@@ -183,6 +237,14 @@ class UserControllers {
       const user = await User.findById(user_id);
       if (!user) {
         return next(ApiError.badRequest('User not found'));
+      }
+
+      if (req.user.role !== 'ADMIN' && req.user.id !== user.id) {
+        return next(
+          ApiError.forbidden(
+            'You do not have permission to access this resource'
+          )
+        );
       }
 
       return res.json({ stars_balance: user.stars_balance });

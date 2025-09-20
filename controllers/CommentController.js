@@ -76,6 +76,12 @@ class CommentController {
         return next(ApiError.badRequest('Comment not found'));
       }
 
+      if (comment.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+        return next(
+          ApiError.forbidden('You do not have permission to edit this comment')
+        );
+      }
+
       if (content.trim() === '') {
         return next(ApiError.badRequest('Field "content" cannot be empty'));
       }
@@ -94,6 +100,14 @@ class CommentController {
       const comment = await Comment.findById(comment_id);
       if (!comment) {
         return next(ApiError.badRequest('Comment not found'));
+      }
+
+      if (comment.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+        return next(
+          ApiError.forbidden(
+            'You do not have permission to delete this comment'
+          )
+        );
       }
 
       Comment.delete(comment_id);

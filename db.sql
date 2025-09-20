@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS tokens;
 DROP TABLE IF EXISTS subscriptions;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS black_list;
 
 CREATE TABLE IF NOT EXISTS users 
 (
@@ -113,6 +114,14 @@ CREATE TABLE IF NOT EXISTS subscriptions
     CONSTRAINT fk_subscription_follower FOREIGN KEY (followerId) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_subscription_following FOREIGN KEY (followingId) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(followerId, followingId)
+);
+
+CREATE TABLE IF NOT EXISTS black_list
+(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    message TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 -- --------------------------------------
 

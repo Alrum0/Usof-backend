@@ -54,6 +54,15 @@ class CategoriesController {
   async createCategory(req, res, next) {
     try {
       const { title, description } = req.body;
+
+      if (req.user.role !== 'ADMIN') {
+        return next(
+          ApiError.forbidden(
+            'You do not have permission to access this resource'
+          )
+        );
+      }
+
       if (!title) {
         return next(ApiError.badRequest('Title is required'));
       }
@@ -72,6 +81,14 @@ class CategoriesController {
     try {
       const { category_id } = req.params;
       let { title, description } = req.body;
+
+      if (req.user.role !== 'ADMIN') {
+        return next(
+          ApiError.forbidden(
+            'You do not have permission to access this resource'
+          )
+        );
+      }
 
       const categories = await categoriesModel.findById(category_id);
       if (!categories) {
@@ -103,6 +120,14 @@ class CategoriesController {
   async deleteCategory(req, res, next) {
     try {
       const { category_id } = req.params;
+
+      if (req.user.role !== 'ADMIN') {
+        return next(
+          ApiError.forbidden(
+            'You do not have permission to access this resource'
+          )
+        );
+      }
 
       const categories = await categoriesModel.findById(category_id);
       if (!categories) {

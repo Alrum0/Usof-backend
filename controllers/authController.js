@@ -1,5 +1,8 @@
 const ApiError = require('../error/ApiError');
+
 const User = require('../models/user');
+const BlackList = require('../models/blackListModel');
+
 const Token = require('../models/tokenModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -23,12 +26,18 @@ class AuthControllers {
     try {
       const { fullName, email, password, role, login, confirmPassword } =
         req.body;
+
       if (!email || !password) {
         return next(ApiError.badRequest('Incorrect email or password'));
       }
 
       if (password !== confirmPassword) {
         return next(ApiError.badRequest('Passwords do not match'));
+      }
+
+      const blacklisted = await BlackList.findOne({ email });
+      if (blacklisted) {
+        return next(ApiError.forbidden('This email is blacklisted'));
       }
 
       const candidateEmail = await User.findOne({ email });
@@ -48,6 +57,8 @@ class AuthControllers {
         login,
         password: hashPassword,
         isVeriffied: false,
+        //FIXME: ПРИБРАТИ ЦЮ ПАРАШУ
+        role: role || 'USER',
       });
       await sendVerificationEmail(user);
 
@@ -66,6 +77,13 @@ class AuthControllers {
         return next(ApiError.internal('User with this email not found'));
       }
 
+      const blacklisted = await BlackList.findOne({ email });
+      if (blacklisted) {
+        return next(
+          ApiError.forbidden('This user is blacklisted and cannot log in')
+        );
+      }
+
       if (!user.isVeriffied) {
         return next(
           ApiError.forbidden('Please verify your email before logging in')
@@ -77,16 +95,26 @@ class AuthControllers {
         return next(ApiError.internal('Incorrect password'));
       }
 
-      // const jwtToken = generateJwt(user.id, user.email, user.role);
-
       const accessToken = generateAccessToken(user.id, user.email, user.role);
       const refreshToken = generateRefreshToken(user.id);
 
-      await Token.create({
-        userId: user.id,
-        token: refreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      });
+      const existingToken = await Token.findOne({ userId: user.id });
+      if (existingToken) {
+        await Token.update(
+          existingToken.id,
+          {
+            token: refreshToken,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          },
+          { userId: user.id }
+        );
+      } else {
+        await Token.create({
+          userId: user.id,
+          token: refreshToken,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        });
+      }
 
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
