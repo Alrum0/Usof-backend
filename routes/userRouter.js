@@ -4,7 +4,7 @@ const userController = require('../controllers/userController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 router.get('/', authMiddleware, userController.getAllUsers); // admin OK 
-router.get('/:user_id', userController.getUser);
+router.get('/:user_id', userController.getUser); // OK
 router.post('/', authMiddleware, userController.createUser); // admin OK
 router.patch('/avatar', authMiddleware, userController.uploadAvatar); // OK
 router.patch('/:user_id', authMiddleware, userController.updateUser); // admin OK
