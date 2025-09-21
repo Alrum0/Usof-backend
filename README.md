@@ -107,24 +107,6 @@ Main dependencies (see `package.json` for full list):
 
 ---
 
-## Environment Variables
-
-Create a `.env` file in the root directory based on `.env.example`:
-
-```
-PORT=5000
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=yourpassword
-DB_NAME=usof_db
-
-JWT_ACCESS_SECRET=your_access_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-```
-
----
-
 ## Project Status
 
 This project is under active development as part of the **Innovation Campus** program.
