@@ -68,53 +68,7 @@ flowchart TD
 
 ## 4. Database Structure
 
-### Tables
-
-#### Users
-- id (PK)
-- fullName
-- email
-- passwordHash
-- role (user/admin)
-- avatar
-- rating
-
-#### Posts
-- id (PK)
-- userId (FK → users.id)
-- title
-- content
-- createdAt
-
-#### Comments
-- id (PK)
-- postId (FK → posts.id)
-- userId (FK → users.id)
-- text
-- createdAt
-
-#### Likes
-- id (PK)
-- userId (FK → users.id)
-- postId (FK → posts.id, nullable)
-- commentId (FK → comments.id, nullable)
-
-#### Followers
-- id (PK)
-- followerId (FK → users.id)
-- followingId (FK → users.id)
-
-#### Ratings
-- id (PK)
-- userId (FK → users.id)
-- stars
-
-### Relationships
-- User 1..* Post
-- User 1..* Comment
-- Post 1..* Comment
-- User 1..* Like
-- User 1..* Follower
+![DataBase](screenshots/DataBase.png)  
 
 ---
 
