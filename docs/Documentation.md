@@ -68,7 +68,7 @@ flowchart TD
 
 ## 4. Database Structure
 
-![DataBase](screenshots/DataBase.png)  
+![DataBase](../screenshots/DataBase.png)  
 
 ---
 
