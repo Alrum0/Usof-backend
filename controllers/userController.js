@@ -32,16 +32,34 @@ class UserControllers {
   }
   async getAllUsers(req, res, next) {
     try {
-      if (req.user.role !== 'ADMIN') {
-        return next(
-          ApiError.forbidden(
-            'You do not have permission to access this resource'
-          )
-        );
+      const { search } = req.query;
+      const isAdmin = req.user.role === 'ADMIN';
+
+      let users;
+      if (search) {
+        users = await User.findByLoginOrName(search);
+      } else {
+        users = await User.findAll();
       }
 
-      const users = await User.findAll();
-      return res.json(users);
+      if (isAdmin) {
+        const adminData = users.map((u) => {
+          const { password, ...rest } = u;
+          return rest;
+        });
+        return res.json(adminData);
+      }
+
+      const publicData = users.map((u) => ({
+        id: u.id,
+        login: u.login,
+        fullName: u.fullName,
+        avatar: u.avatar,
+        isVeriffied: u.isVeriffied,
+        rating: u.rating,
+      }));
+
+      return res.json(publicData);
     } catch (err) {
       console.error(err);
     }

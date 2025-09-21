@@ -18,6 +18,14 @@ class User extends BaseModel {
     return rows[0].rating || 0;
   }
 
+  async findByLoginOrName(search) {
+    const [rows] = await db.query(
+      `SELECT * FROM ${this.tableName} WHERE login LIKE ? OR fullName LIKE ?`,
+      [`%${search}%`, `%${search}%`]
+    );
+    return rows;
+  }
+
   async updateStarsBalance(userId, delta) {
     const user = await this.findById(userId);
     if (!user) {

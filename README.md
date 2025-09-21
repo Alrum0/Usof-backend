@@ -65,6 +65,11 @@ Main dependencies (see `package.json` for full list):
 
 ---
 
+## Documentation
+Full project documentation is available in the [docs folder](./docs).
+
+---
+
 ## API Overview
 
 ### Auth API
