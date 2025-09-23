@@ -1,15 +1,15 @@
-DROP TABLE IF EXISTS post_stars;
-DROP TABLE IF EXISTS post_image;
-DROP TABLE IF EXISTS post_categories;
-DROP TABLE IF EXISTS likes;
-DROP TABLE IF EXISTS comment_likes;
-DROP TABLE IF EXISTS comments;
-DROP TABLE IF EXISTS posts;
-DROP TABLE IF EXISTS categories;
-DROP TABLE IF EXISTS tokens;
-DROP TABLE IF EXISTS subscriptions;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS black_list;
+-- DROP TABLE IF EXISTS post_stars;
+-- DROP TABLE IF EXISTS post_image;
+-- DROP TABLE IF EXISTS post_categories;
+-- DROP TABLE IF EXISTS likes;
+-- DROP TABLE IF EXISTS comment_likes;
+-- DROP TABLE IF EXISTS comments;
+-- DROP TABLE IF EXISTS posts;
+-- DROP TABLE IF EXISTS categories;
+-- DROP TABLE IF EXISTS tokens;
+-- DROP TABLE IF EXISTS subscriptions;
+-- DROP TABLE IF EXISTS users;
+-- DROP TABLE IF EXISTS black_list;
 
 CREATE TABLE IF NOT EXISTS users 
 (

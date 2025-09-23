@@ -298,6 +298,15 @@ class UserControllers {
         return next(ApiError.badRequest('You cannot follow yourself'));
       }
 
+      if (!followingId) {
+        return next(ApiError.badRequest('User ID is required'));
+      }
+
+      const userToFollow = await User.findById(followingId);
+      if (!userToFollow) {
+        return next(ApiError.badRequest('User not found'));
+      }
+
       const alreadyFollowing = await Subscription.findOne({
         followerId,
         followingId,
@@ -341,6 +350,11 @@ class UserControllers {
     try {
       const { user_id } = req.params;
 
+      const user = await User.findById(user_id);
+      if (!user) {
+        return next(ApiError.badRequest('User not found'));
+      }
+
       const followers = await Subscription.getFollowers(user_id);
       return res.json(followers);
     } catch (err) {
@@ -353,7 +367,15 @@ class UserControllers {
     try {
       const { user_id } = req.params;
 
+      const user = await User.findById(user_id);
+      if (!user) {
+        return next(ApiError.badRequest('User not found'));
+      }
+
       const following = await Subscription.getFollowing(user_id);
+      if (!following) {
+        return next(ApiError.badRequest('User not found'));
+      }
       return res.json(following);
     } catch (err) {
       console.error(err);
