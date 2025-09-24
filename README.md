@@ -40,7 +40,7 @@ Main dependencies (see `package.json` for full list):
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/Usof-backend.git
+   git clone https://github.com/Alrum0/Usof-backend.git
    cd Usof-backend
    ```
 
